@@ -4,6 +4,7 @@
   import { topics, appPage, currentTopic, appData } from "../lib/stores/index";
 
   import * as mqtt from "mqtt/dist/mqtt.min";
+  import { LightbulbButton, FanButtons } from "../lib/mqttComponents";
 
   let client: mqtt.MqttClient;
 
@@ -18,24 +19,18 @@
     client.on("connect", () => {
       client.subscribe(topic);
     });
-
-    client.on("message", (receivedTopic, msg) => {
-      if (topic === receivedTopic) on = msg.toString() === "1";
-    });
   });
 
   onDestroy(() => client.end());
 
-  let on: boolean;
-
   let topic: string;
+  let deviceType: string;
+  $: if (topic) deviceType = topic.split("/")[1];
 
-  function toggleTopicMessage() {
-    client.publish(topic, on ? "0" : "1", {
-      retain: true,
-      qos: 2,
-    });
-  }
+  const deviceTypeComponents = {
+    lamp: LightbulbButton,
+    fan: FanButtons,
+  };
 </script>
 
 <div class="topic-selection">
@@ -59,9 +54,7 @@
 </div>
 
 <main>
-  <button class="switch material-icons" class:on on:click={toggleTopicMessage}>
-    <span>lightbulb</span>
-  </button>
+  <svelte:component this={deviceTypeComponents[deviceType]} {client} {topic} />
 </main>
 
 <SettingsBar />
@@ -101,36 +94,5 @@
     place-items: center;
     height: 100vh;
     height: 100dvh;
-  }
-
-  button.switch {
-    position: relative;
-    border-radius: 50%;
-    border: 0;
-    padding: 3rem;
-    aspect-ratio: 1;
-    cursor: pointer;
-    background-color: #666;
-    font-size: 6rem;
-  }
-
-  button.switch::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: 1;
-    border-radius: 50%;
-    opacity: 0;
-    background: var(--clr-btn-gradient);
-    transition: opacity 200ms;
-  }
-
-  button.switch.on::after {
-    opacity: 1;
-  }
-
-  button.switch > span {
-    position: relative;
-    z-index: 2;
   }
 </style>
